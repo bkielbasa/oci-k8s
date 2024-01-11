@@ -1,0 +1,48 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '.*{{ item }}$'
+        line: "{{ hostvars[item].private_ip }} {{item}}"
+        state: present
+      when: hostvars[item].private_ip is defined
+      with_items: "{{ groups.all }}"
+
+- hosts: all
+  roles:
+    - role: istvano.microk8s
+      vars:
+        microk8s_plugins:
+          istio: true
+          cert-manager: true
+          ingress: true
+          dns: true
+          ha-cluster: true
+
+- hosts: all
+  tasks:
+    - name: Add users to microk8s group
+      ansible.builtin.user:
+        name: ubuntu
+        group: microk8s
+
+- hosts: all
+  become: true
+  vars:
+    bashrc: /etc/bash.bashrc
+  tasks:
+    - name: k alias
+      lineinfile:
+        path: "{{ bashrc }}"
+        line: alias k='microk8s kubectl'
+    - name: kubectl alias
+      lineinfile:
+        path: "{{ bashrc }}"
+        line: alias kubectl='microk8s kubectl'
+    - name: helm alias
+      lineinfile:
+        path: "{{ bashrc }}"
+        line: alias helm='microk8s helm'

@@ -1,0 +1,3 @@
+---
+roles:
+- src: https://github.com/istvano/ansible_role_microk8s
